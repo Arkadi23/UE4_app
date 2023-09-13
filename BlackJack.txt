@@ -1,0 +1,283 @@
+#include <iostream>
+#include <string>
+#include <array>
+#include <ctime>
+#include <vector>
+
+using namespace std;
+
+enum class CardRank
+{
+	HEARTS,     // SIRT
+	SPADES,     // xar
+	DIAMONDES,  // qyap
+	CLUBS,      // xach
+	MAX_RANK
+};
+
+enum class CardValue
+{
+	TWO,
+	THREE,
+	FOUR,
+	FIVE,
+	SIX,
+	SEVEN,
+	EIGHT,
+	NINE,
+	TEN,
+	J,
+	Q,
+	K,
+	T,
+	MAX_VALUE
+};
+
+enum class BlackjackResult
+{
+	PLAYER_WIN,
+	DEALER_WIN,
+	NOBODY_WIN
+};
+
+struct Card
+{
+	CardRank rank;
+	CardValue value;
+};
+
+//Functions declaration
+
+void PrintCard(const Card& card);
+void FillDeck(array<Card, 52>& deck);
+void PrintDeck(const array<Card, 52>& deck);
+void SwapCard(Card& card1, Card& card2);
+int GenerateRandomNumberInRange(int min, int max);
+void ShuffleDeck(array<Card, 52>& deck);
+int GetCardValue(const Card& card);
+BlackjackResult PlayBlackjack(const array<Card, 52>& deck);
+void PrintCurrentPlayerStat(const bool IsPlayer, const int Score, const vector<Card>& ReceivingCards);
+char GetPlayerChoice();
+void PrintWinner(BlackjackResult Result);
+
+int main()
+{
+	srand(static_cast<unsigned int>(time(NULL)));
+	int temp = rand();
+	
+	while (true)
+	{
+		array<Card, 52> deck;
+		FillDeck(deck);
+		ShuffleDeck(deck);
+		PrintWinner(PlayBlackjack(deck));
+
+		cout << "Do you want play again?(y/n): ";
+		char PlayAgain;
+		cin >> PlayAgain;
+
+		if (PlayAgain != 'Y' && PlayAgain != 'y')
+		{
+			break;
+		}
+	}
+}
+
+void PrintCard(const Card& card)
+{
+	switch (card.value)
+	{	
+		case CardValue::TWO:   cout << "2 "; break;
+		case CardValue::THREE: cout << "3 "; break;
+		case CardValue::FOUR:  cout << "4 "; break;
+		case CardValue::FIVE:  cout << "5 "; break;
+		case CardValue::SIX:   cout << "6 "; break;
+		case CardValue::SEVEN: cout << "7 "; break;
+		case CardValue::EIGHT: cout << "8 "; break;
+		case CardValue::NINE:  cout << "9 "; break;
+		case CardValue::TEN:   cout << "10 "; break;
+		case CardValue::J:     cout << "J "; break;
+		case CardValue::Q:     cout << "Q "; break;
+		case CardValue::K:     cout << "K "; break;
+		case CardValue::T:     cout << "T "; break;
+	}
+	switch (card.rank)
+	{
+		case CardRank::HEARTS:    cout << "Sirt "; break;
+		case CardRank::SPADES:    cout << "Xar "; break;
+		case CardRank::DIAMONDES: cout << "Qyap "; break;
+		case CardRank::CLUBS:     cout << "Xach "; break;
+	}
+}
+
+void FillDeck(array<Card, 52>& deck)
+{
+	for (int rank = 0; rank < (int)CardRank::MAX_RANK; rank++)
+	{
+		for (int value = 0; value < (int)CardValue::MAX_VALUE; value++)
+		{
+			deck[rank * (int)CardValue::MAX_VALUE + value].rank = static_cast<CardRank>(rank);
+			deck[rank * (int)CardValue::MAX_VALUE + value].value = static_cast<CardValue>(value);
+		}
+	}
+}
+
+void PrintDeck(const array<Card, 52>& deck)
+{
+	for (auto& card : deck)
+	{
+		PrintCard(card);
+	}
+}
+
+void SwapCard(Card& card1, Card& card2)
+{
+	Card temp = card1;
+	card1 = card2;
+	card2 = temp;
+}
+
+int GenerateRandomNumberInRange(int min, int max)
+{
+	return (min + rand() % (max - min + 1));
+}
+
+void ShuffleDeck(array<Card, 52>& deck)
+{
+	for (int i = 0; i < deck.size(); i++)
+	{
+		SwapCard(deck[i], deck[GenerateRandomNumberInRange(1, 51)]);
+	}
+}
+
+int GetCardValue(const Card& card)
+{
+	switch (card.value)
+	{
+		case CardValue::TWO:   return 2;
+		case CardValue::THREE: return 3;
+		case CardValue::FOUR:  return 4;
+		case CardValue::FIVE:  return 5;
+		case CardValue::SIX:   return 6; 
+		case CardValue::SEVEN: return 7;
+		case CardValue::EIGHT: return 8;
+		case CardValue::NINE:  return 9;
+		case CardValue::TEN:   return 10;
+		case CardValue::J:     return 10;
+		case CardValue::Q:     return 10;
+		case CardValue::K:     return 10;
+		case CardValue::T:     return 11;
+	}
+
+	return 0;
+}
+
+BlackjackResult PlayBlackjack(const array<Card, 52>& deck)
+{
+	const Card* CardPtr = &deck[0];
+	int PlayerScore = 0;
+	int DealerScore = 0;
+
+	vector<Card> PlayerCards;
+	vector<Card> DealerCards;
+
+	*CardPtr++;
+	DealerScore += GetCardValue(*CardPtr);
+	DealerCards.push_back(*CardPtr);
+	PrintCurrentPlayerStat(false, DealerScore, DealerCards);
+
+	*CardPtr++;
+	PlayerScore += GetCardValue(*CardPtr);
+	PlayerCards.push_back(*CardPtr);
+
+	*CardPtr++;
+	PlayerScore += GetCardValue(*CardPtr);
+	PlayerCards.push_back(*CardPtr);
+	PrintCurrentPlayerStat(true, PlayerScore, PlayerCards);
+
+	while (true)
+	{
+		if (PlayerScore > 21)
+			return BlackjackResult::DEALER_WIN;
+
+		char Choice = GetPlayerChoice();
+		if (Choice == 's')
+			break;
+
+		*CardPtr++;
+		PlayerScore += GetCardValue(*CardPtr);
+		PlayerCards.push_back(*CardPtr);
+		PrintCurrentPlayerStat(true, PlayerScore, PlayerCards);
+
+		if (PlayerScore == 21)
+			return BlackjackResult::PLAYER_WIN;
+	}
+
+	while (DealerScore < 17)
+	{
+		*CardPtr++;
+		DealerScore += GetCardValue(*CardPtr);
+		DealerCards.push_back(*CardPtr);
+		PrintCurrentPlayerStat(false, DealerScore, DealerCards);
+	}
+	if (DealerScore > 21)
+	{
+		return BlackjackResult::PLAYER_WIN;
+	}
+	if (PlayerScore > DealerScore)
+	{
+		return BlackjackResult::PLAYER_WIN;
+	}
+	if (PlayerScore < DealerScore)
+	{
+		return BlackjackResult::DEALER_WIN;
+	}
+	if (PlayerScore == DealerScore)
+	{
+		return BlackjackResult::NOBODY_WIN;
+	}
+}
+
+void PrintCurrentPlayerStat(const bool IsPlayer, const int Score, const vector<Card>& ReceivingCards)
+{
+	if (IsPlayer)
+	{
+		cout << "===>Player\n\t";
+	}
+	else
+		cout << "===>Dealer\n\t";
+
+	for (const auto& card : ReceivingCards)
+	{
+		PrintCard(card);
+	}
+	cout << "\tScore: " << Score << endl;
+}
+
+char GetPlayerChoice()
+{
+	cout << "(h) to hit, or (s) to stand: ";
+	char choice;
+	do
+	{
+		std::cin >> choice;
+	} while (choice != 'h' && choice != 's');
+
+	return choice;
+}
+
+void PrintWinner(BlackjackResult Result)
+{
+	if (Result == BlackjackResult::PLAYER_WIN)
+	{
+		cout << "You win!!!\n";
+	}
+	if (Result == BlackjackResult::DEALER_WIN)
+	{
+		cout << "Dealer win!!!\n";
+	}
+	if (Result == BlackjackResult::NOBODY_WIN)
+	{
+		cout << "Nobody win!!!\n";
+	}
+}
